@@ -4,3 +4,5 @@ mega2560:
 esp8266:
 	(cd embedded; arduino-cli --fqbn esp8266:esp8266:generic compile --libraries ./libs/ -u -p /dev/ttyACM0 esp8266)
 
+screen:
+	screen /dev/ttyACM0 9600
