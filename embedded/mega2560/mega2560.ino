@@ -11,8 +11,8 @@ const int MOTOR_PIN1 = 48;
 const int MOTOR_PIN2 = 46;
 const int MOTOR_PIN3 = 44;
 const int MOTOR_PIN4 = 42;
-const int LED_VCC_PIN = 39;
-const int LED_GND_PIN = 41;
+const int LED_VCC_PIN = 41;
+const int LED_GND_PIN = 39;
 
 ESC m1(MOTOR_PIN1,1000,2000,700);
 ESC m2(MOTOR_PIN2,1000,2000,700);
