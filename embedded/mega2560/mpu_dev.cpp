@@ -1,12 +1,12 @@
-#include "status_class.h"
+#include "mpu_dev.h"
 
-status_class::status_class(class serial_comm* comm) : comm(comm){}
+mpu_dev_class::mpu_dev_class(class serial_comm* comm) : comm(comm){}
 
 int compare(const void* a, const void* b){
     return (*(float*)a > *(float*)b) - (*(float*)a < *(float*)b);
 }
 
-void status_class::update(){
+void mpu_dev_class::update(){
 	uint32_t rounds = 10;
 
 	float farray1[rounds];
@@ -74,7 +74,7 @@ void status_class::update(){
 	this->mz = farray3[rounds/2];
 }
 
-int status_class::init(){
+int mpu_dev_class::init(){
 	if(!this->bmp.begin()){
 		return -1;
 	}
@@ -89,7 +89,7 @@ int status_class::init(){
 	return 0;
 }
 
-int status_class::send(){
+int mpu_dev_class::send(){
 	this->comm->send_msg.type = MSG_TYPE_STATUS;
 
 	this->comm->append_msg((char*)&this->temp,sizeof(this->temp));

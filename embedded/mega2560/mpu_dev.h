@@ -3,9 +3,9 @@
 #include <Adafruit_BMP280.h>
 #include <MPU9255.h>
 
-class status_class{
+class mpu_dev_class{
 public:
-	status_class(class serial_comm* comm);
+	mpu_dev_class(class serial_comm* comm);
 
 	int init();
 

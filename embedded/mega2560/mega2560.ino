@@ -1,5 +1,5 @@
 #include <serial_comm.h>
-#include "status_class.h"
+#include "mpu_dev.h"
 #include <Adafruit_BMP280.h>
 #include <device_status.h>
 #include <timing.h>
@@ -21,13 +21,13 @@ ESC m4(MOTOR_PIN4,1000,2000,700);
 
 serial_comm esp_comm;
 
-status_class status(&esp_comm);
+mpu_dev_class mpu_dev(&esp_comm);
 
 device_status_class dev_status(LED_VCC_PIN,-1,LED_VCC_PIN);
 
 timing_class timing;
 size_t heartbeat_t;
-size_t status_t;
+size_t mpu_collect_t;
 
 command_parser cmd_parser(&m1,&m2,&m3,&m4);
 
@@ -38,11 +38,11 @@ void setup() {
 	Serial.begin(9600);
 	Serial1.begin(9600);
 	esp_comm.init(&Serial1);
-	if(status.init() != 0){
+	if(mpu_dev.init() != 0){
 		dev_status.error('I');
 	}
 
-	status_t = timing.add_timing(1000);
+	mpu_collect_t = timing.add_timing(250);
 	heartbeat_t = timing.add_timing(1000);
 
 	delay(5000);
@@ -62,12 +62,12 @@ void loop() {
 #endif
 		dev_status.heartbeat();
 	}
-	if(timing.is_time(status_t)){
-		status.update();
+	if(timing.is_time(mpu_collect_t)){
+		mpu_dev.update();
 #ifdef DEBUG
 		Serial.println("Update");
 #endif
-		if(status.send()){
+		if(mpu_dev.send()){
 			dev_status.error('E');
 		}
 	}
