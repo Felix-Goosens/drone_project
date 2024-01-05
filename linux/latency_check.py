@@ -5,9 +5,11 @@ import time
 dc = drone_comm()
 ds = drone_status()
 timeout = 60
+latencies = []
+
+dc.recv_status(ds)
 start_time = time.time()
 last_recv_time = start_time
-latencies = []
 
 while(time.time() - start_time < timeout):
 	dc.recv_status(ds)
