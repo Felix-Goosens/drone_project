@@ -6,6 +6,9 @@ t = time.time()
 while(True):
 	dc.recv_status(ds)
 	if(ds.len > 0):
+		print("#########################")
+		print("Time: " + str(time.time()))
+
 		print("Type: " + str(ds.type))
 		print("Len: " + str(ds.len))
 		print("Temp: " + str(ds.temp))
@@ -25,11 +28,9 @@ while(True):
 		print("mz: " + str(ds.mz))
 
 		ds.len = 0
-	if(time.time()-t >= 2):
+	if(time.time()-t >= 5):
 		t = time.time()
 		dc.send_debug_msg(b"Hello,world!")
-		dc.send_motor_msg(1300,1300,333,444)
-#		dc.send_motor_msg(0,1200,333,444)
-		time.sleep(15)
+		dc.send_motor_msg(1100,1100,1100,1100)
+		time.sleep(3)
 		dc.send_motor_msg(0,0,0,0)
-		exit()
