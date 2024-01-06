@@ -2,10 +2,15 @@
 
 mpu_dev_class::mpu_dev_class(class serial_comm* comm) : comm(comm){}
 
-int compare(const void* a, const void* b){
+int fcompare(const void* a, const void* b){
     return (*(float*)a > *(float*)b) - (*(float*)a < *(float*)b);
 }
 
+int icompare(const void* a, const void* b){
+    return *(int16_t*)a > *(int16_t*)b;
+}
+
+// TODO: Optimize this function
 void mpu_dev_class::update(){
 	uint32_t rounds = 10;
 
@@ -13,65 +18,69 @@ void mpu_dev_class::update(){
 	float farray2[rounds];
 	float farray3[rounds];
 
+	int16_t iarray1[rounds];
+	int16_t iarray2[rounds];
+	int16_t iarray3[rounds];
+
 	for(int i=0;i<rounds;i++){
 		farray1[i] = this->bmp.readTemperature();
 	}
-	qsort(farray1,rounds,sizeof(float),compare);
+	qsort(farray1,rounds,sizeof(float),fcompare);
 	this->temp = farray1[rounds/2];
 
 	for(int i=0;i<rounds;i++){
 		farray1[i] = this->bmp.readPressure();
 	}
-	qsort(farray1,rounds,sizeof(float),compare);
+	qsort(farray1,rounds,sizeof(float),fcompare);
 	this->pressure = farray1[rounds/2];
 
 	for(int i=0;i<rounds;i++){
 		farray1[i] = this->bmp.readAltitude(1013.25);
 	}
-	qsort(farray1,rounds,sizeof(float),compare);
+	qsort(farray1,rounds,sizeof(float),fcompare);
 	this->altitude = farray1[rounds/2];
 
 	for(int i=0;i<rounds;i++){
 		this->mpu.read_acc();
-		farray1[i] = this->mpu.ax;
-		farray2[i] = this->mpu.ay;
-		farray3[i] = this->mpu.az;
+		iarray1[i] = this->mpu.ax;
+		iarray2[i] = this->mpu.ay;
+		iarray3[i] = this->mpu.az;
 	}
-	qsort(farray1,rounds,sizeof(float),compare);
-	qsort(farray2,rounds,sizeof(float),compare);
-	qsort(farray3,rounds,sizeof(float),compare);
+	qsort(iarray1,rounds,sizeof(int16_t),icompare);
+	qsort(iarray2,rounds,sizeof(int16_t),icompare);
+	qsort(iarray3,rounds,sizeof(int16_t),icompare);
 
-	this->ax = farray1[rounds/2];
-	this->ay = farray2[rounds/2];
-	this->az = farray3[rounds/2];
+	this->ax = iarray1[rounds/2];
+	this->ay = iarray2[rounds/2];
+	this->az = iarray3[rounds/2];
 
 	for(int i=0;i<rounds;i++){
 		this->mpu.read_gyro();
-		farray1[i] = this->mpu.gx;
-		farray2[i] = this->mpu.gy;
-		farray3[i] = this->mpu.gz;
+		iarray1[i] = this->mpu.gx;
+		iarray2[i] = this->mpu.gy;
+		iarray3[i] = this->mpu.gz;
 	}
-	qsort(farray1,rounds,sizeof(float),compare);
-	qsort(farray2,rounds,sizeof(float),compare);
-	qsort(farray3,rounds,sizeof(float),compare);
+	qsort(iarray1,rounds,sizeof(int16_t),icompare);
+	qsort(iarray2,rounds,sizeof(int16_t),icompare);
+	qsort(iarray3,rounds,sizeof(int16_t),icompare);
 
-	this->gx = farray1[rounds/2];
-	this->gy = farray2[rounds/2];
-	this->gz = farray3[rounds/2];
+	this->gx = iarray1[rounds/2];
+	this->gy = iarray2[rounds/2];
+	this->gz = iarray3[rounds/2];
 
 	for(int i=0;i<rounds;i++){
 		this->mpu.read_mag();
-		farray1[i] = this->mpu.mx;
-		farray2[i] = this->mpu.my;
-		farray3[i] = this->mpu.mz;
+		iarray1[i] = this->mpu.mx;
+		iarray2[i] = this->mpu.my;
+		iarray3[i] = this->mpu.mz;
 	}
-	qsort(farray1,rounds,sizeof(float),compare);
-	qsort(farray2,rounds,sizeof(float),compare);
-	qsort(farray3,rounds,sizeof(float),compare);
+	qsort(iarray1,rounds,sizeof(int16_t),icompare);
+	qsort(iarray2,rounds,sizeof(int16_t),icompare);
+	qsort(iarray3,rounds,sizeof(int16_t),icompare);
 
-	this->mx = farray1[rounds/2];
-	this->my = farray2[rounds/2];
-	this->mz = farray3[rounds/2];
+	this->mx = iarray1[rounds/2];
+	this->my = iarray2[rounds/2];
+	this->mz = iarray3[rounds/2];
 }
 
 int mpu_dev_class::init(){

@@ -16,7 +16,7 @@ public:
 
 	float temp, pressure, altitude;
 
-	float ax, ay, az, gx, gy, gz, mx, my, mz;
+	int16_t ax, ay, az, gx, gy, gz, mx, my, mz;
 	
 	void update();
 	int send();
