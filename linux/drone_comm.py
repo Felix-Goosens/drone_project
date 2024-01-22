@@ -53,17 +53,17 @@ class drone_comm:
 				ds.pres = struct.unpack("f",data[6:10])[0]
 				ds.alt = struct.unpack("f",data[10:14])[0]
 				
-				ds.ax = struct.unpack("h",data[14:16])[0]
-				ds.ay = struct.unpack("h",data[16:18])[0]
-				ds.az = struct.unpack("h",data[18:20])[0]
+				ds.ax = struct.unpack("H",data[14:16])[0]
+				ds.ay = struct.unpack("H",data[16:18])[0]
+				ds.az = struct.unpack("H",data[18:20])[0]
 
-				ds.gx = struct.unpack("h",data[20:22])[0]
-				ds.gy = struct.unpack("h",data[22:24])[0]
-				ds.gz = struct.unpack("h",data[24:26])[0]
+				ds.gx = struct.unpack("H",data[20:22])[0]
+				ds.gy = struct.unpack("H",data[22:24])[0]
+				ds.gz = struct.unpack("H",data[24:26])[0]
 
-				ds.mx = struct.unpack("h",data[26:28])[0]
-				ds.my = struct.unpack("h",data[28:30])[0]
-				ds.mz = struct.unpack("h",data[30:32])[0]
+				ds.mx = struct.unpack("H",data[26:28])[0]
+				ds.my = struct.unpack("H",data[28:30])[0]
+				ds.mz = struct.unpack("H",data[30:32])[0]
 
 
 
