@@ -10,7 +10,7 @@
 #define MAX_MSG_LEN BUFFER_SIZE - MSG_METADATA_SIZE
 
 struct msg_struct{
-	char type;
+	uint8_t type;
 	uint8_t len;
 	char msg[MAX_MSG_LEN];
 };

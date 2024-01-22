@@ -8,6 +8,7 @@ def main(stdscr):
 	ds = drone_status()
 	t = time.time()
 	while(True):
+		dc.send_status_msg()
 		dc.recv_status(ds)
 		if(ds.len > 0):
 			stdscr.clear()
@@ -34,6 +35,7 @@ def main(stdscr):
 			stdscr.refresh()
 
 			ds.len = 0
+		time.sleep(0.200)
 #	if(time.time()-t >= 5):
 #		t = time.time()
 #		dc.send_debug_msg(b"Hello,world!")

@@ -20,6 +20,7 @@ class drone_comm:
 		self.sock.bind((self.ip, self.port))
 
 		self.MSG_TYPE_DEBUG = 2
+		self.MSG_TYPE_STATUS = 10
 		self.MSG_TYPE_MOTORS = 14
 
 	def send_msg(self,msg,msg_type):
@@ -30,6 +31,9 @@ class drone_comm:
 
 	def send_debug_msg(self,msg):
 		self.send_msg(msg,self.MSG_TYPE_DEBUG)
+
+	def send_status_msg(self):
+		self.send_msg(b"",self.MSG_TYPE_STATUS)
 
 	def send_motor_msg(self,m1,m2,m3,m4):
 		if(m1 >= 1 << 16 or m2 >= 1 << 16 or m3 >= 1 << 16 or m4 >= 1 << 16):

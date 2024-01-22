@@ -5,11 +5,7 @@
 
 class mpu_dev_class{
 public:
-	mpu_dev_class(class serial_comm* comm);
-
 	int init();
-
-	serial_comm* comm;
 
 	Adafruit_BMP280 bmp;
 	MPU9255 mpu;

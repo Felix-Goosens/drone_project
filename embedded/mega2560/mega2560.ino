@@ -1,11 +1,4 @@
-#include <serial_comm.h>
-#include "mpu_dev.h"
-#include <Adafruit_BMP280.h>
-#include <device_status.h>
-#include <timing.h>
-#include "command_parser.h"
-
-#include "ESC.h"
+#include "mega2560.h"
 
 const int MOTOR_PIN1 = 48;
 const int MOTOR_PIN2 = 46;
@@ -14,22 +7,16 @@ const int MOTOR_PIN4 = 42;
 const int LED_VCC_PIN = 41;
 const int LED_GND_PIN = 39;
 
-ESC m1(MOTOR_PIN1,1000,2000,700);
-ESC m2(MOTOR_PIN2,1000,2000,700);
-ESC m3(MOTOR_PIN3,1000,2000,700);
-ESC m4(MOTOR_PIN4,1000,2000,700);
+class ESC M1(MOTOR_PIN1,1000,2000,700);
+class ESC M2(MOTOR_PIN2,1000,2000,700);
+class ESC M3(MOTOR_PIN3,1000,2000,700);
+class ESC M4(MOTOR_PIN4,1000,2000,700);
 
-serial_comm esp_comm;
+class serial_comm ESP_COMM;
+class mpu_dev_class MPU_DEV;
+class device_status_class DEV_STATUS(LED_VCC_PIN,-1,LED_VCC_PIN);
 
-mpu_dev_class mpu_dev(&esp_comm);
-
-device_status_class dev_status(LED_VCC_PIN,-1,LED_VCC_PIN);
-
-timing_class timing;
-size_t heartbeat_t;
-size_t mpu_collect_t;
-
-command_parser cmd_parser(&m1,&m2,&m3,&m4);
+class timing_class TIMING;
 
 void setup() {
 	pinMode(LED_GND_PIN, OUTPUT);
@@ -37,47 +24,48 @@ void setup() {
 
 	Serial.begin(9600);
 	Serial1.begin(9600);
-	esp_comm.init(&Serial1);
-	if(mpu_dev.init() != 0){
-		dev_status.error('I');
+	ESP_COMM.init(&Serial1);
+	if(MPU_DEV.init() != 0){
+		DEV_STATUS.error('I');
 	}
 
-	mpu_collect_t = timing.add_timing(250);
-	heartbeat_t = timing.add_timing(1000);
-
 	delay(5000);
-	m1.arm();
-	m2.arm();
-	m3.arm();
-	m4.arm();
+	M1.arm();
+	M2.arm();
+	M3.arm();
+	M4.arm();
 	delay(5000);
 
 }
 
 void loop() {
+	static size_t heartbeat_t = TIMING.add_timing(1000);
+#ifdef DEBUG
+	static size_t mpu_collect_t = TIMING.add_timing(2000);
+#else
+	static size_t mpu_collect_t = TIMING.add_timing(20);
+#endif
+	static class command_parser cmd_parser;
 
-	if(timing.is_time(heartbeat_t)){
+	if(TIMING.is_time(heartbeat_t)){
 #ifdef DEBUG
 		Serial.println("Heartbeat");
 #endif
-		dev_status.heartbeat();
+		DEV_STATUS.heartbeat();
 	}
-	if(timing.is_time(mpu_collect_t)){
-		mpu_dev.update();
+	if(TIMING.is_time(mpu_collect_t)){
+		MPU_DEV.update();
 #ifdef DEBUG
 		Serial.println("Update");
 #endif
-		if(mpu_dev.send()){
-			dev_status.error('E');
-		}
 	}
-	if(esp_comm.recv() == 0){
+	if(ESP_COMM.recv() == 0){
 #ifdef DEBUG
 		Serial.println("Received message");
 #endif
-		if(cmd_parser.execute_command(&esp_comm.recv_msg) != 0){
+		if(cmd_parser.execute_command(&ESP_COMM.recv_msg) != 0){
 			// Invalid command
-			dev_status.error('M');
+			DEV_STATUS.error('M');
 		}
 	}
 }
