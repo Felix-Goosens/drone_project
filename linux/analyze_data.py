@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def get_datapoints(name):
-    dump = open("gyro_data","r")
+    dump = open("roll_data_moving","r")
     x = []
     y = []
     for line in dump:
@@ -55,18 +55,20 @@ def plot_points(names,real=False):
         points = get_datapoints(name)
         print(name)
         print(f"Average: {points[1].mean()}")
-
-        ax[0].scatter(points[0], points[1], s=0.5, alpha=0.3)
+        print(f"Std: {points[1].std()}")
+        points[1] = (points[1]-101325)/12.013
+        ax[0].scatter(points[0], points[1], s=1)
         points[1] = offset(points[1])
 
-        ax[1].scatter(points[0], points[1], s=0.5, alpha=0.3)
+        ax[1].scatter(points[0], points[1], s=1)
         points[1] = average(points[1],n=5)
 
-        ax[2].scatter(points[0], points[1], s=0.5, alpha=0.3)
+        ax[2].scatter(points[0], points[1], s=1)
     
     plt.show()
 
-plot_points(["mx","my","mz"])
-plot_points(["ax","ay","az"])
-plot_points(["gx","gy","gz"])
-plot_points(["Pressure","Temp"],True)
+#plot_points(["roll","pitch","yaw"],True)
+#plot_points(["mx","my","mz"])
+#plot_points(["ax","ay","az"])
+#plot_points(["gx","gy","gz"])
+plot_points(["Pressure"],True)
