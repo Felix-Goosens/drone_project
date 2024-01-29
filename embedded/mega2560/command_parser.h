@@ -8,6 +8,7 @@
 #define CMD_TYPE_STATUS MSG_TYPE_STATUS
 #define CMD_TYPE_MOTORS MSG_TYPE_MOTORS
 #define CMD_TYPE_POS MSG_TYPE_STATUS
+#define CMD_TYPE_CAL MSG_TYPE_CALIBRATE
 
 class command_parser {
 public:

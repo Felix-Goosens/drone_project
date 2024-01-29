@@ -1,5 +1,7 @@
 #include "mega2560.h"
 
+const int MPU_SAMPLING_RATE = 200;
+
 const int MOTOR_PIN1 = 48;
 const int MOTOR_PIN2 = 46;
 const int MOTOR_PIN3 = 44;
@@ -25,7 +27,7 @@ void setup() {
 	Serial.begin(9600);
 	Serial1.begin(9600);
 	ESP_COMM.init(&Serial1);
-	if(MPU_DEV.init() != 0){
+	if(!MPU_DEV.init()){
 		DEV_STATUS.error('I');
 	}
 
@@ -39,12 +41,9 @@ void setup() {
 }
 
 void loop() {
+
 	static size_t heartbeat_t = TIMING.add_timing(1000);
-#ifdef DEBUG
-	static size_t mpu_collect_t = TIMING.add_timing(2000);
-#else
-	static size_t mpu_collect_t = TIMING.add_timing(20);
-#endif
+	static size_t mpu_collect_t = TIMING.add_timing(1000/MPU_SAMPLING_RATE);
 	static class command_parser cmd_parser;
 
 	if(TIMING.is_time(heartbeat_t)){
@@ -55,9 +54,6 @@ void loop() {
 	}
 	if(TIMING.is_time(mpu_collect_t)){
 		MPU_DEV.update();
-#ifdef DEBUG
-		Serial.println("Update");
-#endif
 	}
 	if(ESP_COMM.recv() == 0){
 #ifdef DEBUG

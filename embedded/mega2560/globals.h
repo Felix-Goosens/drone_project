@@ -6,6 +6,8 @@
 #include <timing.h>
 #include "ESC.h"
 
+extern const int MPU_SAMPLING_RATE;
+
 extern const int MOTOR_PIN1;
 extern const int MOTOR_PIN2;
 extern const int MOTOR_PIN3;

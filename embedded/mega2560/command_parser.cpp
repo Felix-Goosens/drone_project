@@ -44,18 +44,23 @@ int command_parser::execute_command(struct msg_struct* command){
 			ESP_COMM.append_msg((char*)&MPU_DEV.pressure,sizeof(MPU_DEV.pressure));
 			ESP_COMM.append_msg((char*)&MPU_DEV.altitude,sizeof(MPU_DEV.altitude));
 
-			ESP_COMM.append_msg((char*)&MPU_DEV.ax,sizeof(MPU_DEV.ax));
-			ESP_COMM.append_msg((char*)&MPU_DEV.ay,sizeof(MPU_DEV.ay));
-			ESP_COMM.append_msg((char*)&MPU_DEV.az,sizeof(MPU_DEV.az));
+			ESP_COMM.append_msg((char*)&MPU_DEV.pitch,sizeof(MPU_DEV.pitch));
+			ESP_COMM.append_msg((char*)&MPU_DEV.roll,sizeof(MPU_DEV.roll));
+			ESP_COMM.append_msg((char*)&MPU_DEV.yaw,sizeof(MPU_DEV.yaw));
 
-			ESP_COMM.append_msg((char*)&MPU_DEV.gx,sizeof(MPU_DEV.ax));
-			ESP_COMM.append_msg((char*)&MPU_DEV.gy,sizeof(MPU_DEV.ay));
-			ESP_COMM.append_msg((char*)&MPU_DEV.gz,sizeof(MPU_DEV.az));
+			ESP_COMM.send();
+			break;
+		case(CMD_TYPE_CAL):
+#ifdef DEBUG
+			Serial.println("CMD_TYPE_CAL");
+#endif
+			if(command->len != sizeof(float)){
+				break;
+			}
+			float* magnetic_declination = (float*)command->msg;
+			MPU_DEV.calibrate(*magnetic_declination);
 
-			ESP_COMM.append_msg((char*)&MPU_DEV.mx,sizeof(MPU_DEV.ax));
-			ESP_COMM.append_msg((char*)&MPU_DEV.my,sizeof(MPU_DEV.ay));
-			ESP_COMM.append_msg((char*)&MPU_DEV.mz,sizeof(MPU_DEV.az));
-
+			ESP_COMM.send_msg.type = MSG_TYPE_CALIBRATE;
 			ESP_COMM.send();
 			break;
 		default:

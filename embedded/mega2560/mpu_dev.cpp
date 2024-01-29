@@ -8,27 +8,8 @@ int icompare(const void* a, const void* b){
     return *(int16_t*)a > *(int16_t*)b;
 }
 
-void mpu_dev_class::update(){
-	this->temp = this->bmp.readTemperature();
-	this->pressure = this->bmp.readPressure();
-
-	this->mpu.read_acc();
-	this->ax = this->mpu.ax;
-	this->ay = this->mpu.ay;
-	this->az = this->mpu.az;
-
-	this->mpu.read_gyro();
-	this->gx = this->mpu.gx;
-	this->gy = this->mpu.gy;
-	this->gz = this->mpu.gz;
-
-	this->mpu.read_mag();
-	this->mx = this->mpu.mx;
-	this->my = this->mpu.my;
-	this->mz = this->mpu.mz;
-}
-
 int mpu_dev_class::init(){
+
 	if(!this->bmp.begin()){
 		return -1;
 	}
@@ -37,8 +18,22 @@ int mpu_dev_class::init(){
 		Adafruit_BMP280::SAMPLING_X16,    // Pressure oversampling
 		Adafruit_BMP280::FILTER_X16,      // Filtering.
 		Adafruit_BMP280::STANDBY_MS_500); // Standby time
-	if(this->mpu.init()){
-		return -1;
-	}
-	return 0;
+//	return this->mpu.setup(MPU9250_DEFAULT_ADDRESS);
+	return this->mpu.setup(0x68);
+}
+
+void mpu_dev_class::calibrate(float magnetic_declination){
+	this->mpu.setMagneticDeclination(magnetic_declination);
+    this->mpu.calibrateAccelGyro();
+    this->mpu.calibrateMag();
+}
+
+void mpu_dev_class::update(){
+	this->temp = this->bmp.readTemperature();
+	this->pressure = this->bmp.readPressure();
+
+	this->mpu.update();
+	this->yaw = this->mpu.getYaw();
+	this->pitch = this->mpu.getPitch();
+	this->roll = this->mpu.getRoll();
 }

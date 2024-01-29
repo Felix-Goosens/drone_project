@@ -4,6 +4,7 @@
 #define BUFFER_SIZE 63
 
 #define MSG_TYPE_DEBUG 2
+#define MSG_TYPE_CALIBRATE 4
 #define MSG_TYPE_STATUS 10
 #define MSG_TYPE_MOTORS 14
 #define MSG_METADATA_SIZE sizeof(char) + sizeof(uint8_t)
