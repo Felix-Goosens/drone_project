@@ -2,6 +2,27 @@ import socket
 import select
 import struct
 
+class drone_configuration:
+	def __init__(self):
+		self.max_motor_val = 0
+		self.min_motor_val = 0
+
+		self.height_P = 0
+		self.height_I = 0
+		self.height_D = 0
+
+		self.yaw_P = 0
+		self.yaw_I = 0
+		self.yaw_D = 0
+
+		self.roll_P = 0
+		self.roll_I = 0
+		self.roll_D = 0
+
+		self.pitch_P = 0
+		self.pitch_I = 0
+		self.pitch_D = 0
+
 class drone_status:
 	def __init__(self):
 		self.type = 0
@@ -23,7 +44,13 @@ class drone_comm:
 		self.MSG_TYPE_DEBUG = 2
 		self.MSG_TYPE_CALIBRATE = 4
 		self.MSG_TYPE_STATUS = 10
+		self.MSG_TYPE_ARM = 11
+		self.MSG_TYPE_STARTUP = 12
+		self.MSG_TYPE_SHUTDOWN = 13
 		self.MSG_TYPE_MOTORS = 14
+		self.MSG_TYPE_HEIGHT = 16
+
+		self.send_msg(b"",self.MSG_TYPE_ARM)
 
 	def send_msg(self,msg,msg_type):
 		if(len(msg) > 61):
@@ -44,6 +71,31 @@ class drone_comm:
 	def send_status_msg(self):
 		self.send_msg(b"",self.MSG_TYPE_STATUS)
 
+	def send_startup_msg(self,configuration):
+		msg = struct.pack("d",configuration.max_motor_val)
+		msg += struct.pack("d",configuration.min_motor_val)
+
+		msg += struct.pack("d",configuration.height_P)
+		msg += struct.pack("d",configuration.height_I)
+		msg += struct.pack("d",configuration.height_D)
+
+		msg += struct.pack("d",configuration.yaw_P)
+		msg += struct.pack("d",configuration.yaw_I)
+		msg += struct.pack("d",configuration.yaw_D)
+
+		msg += struct.pack("d",configuration.roll_P)
+		msg += struct.pack("d",configuration.roll_I)
+		msg += struct.pack("d",configuration.roll_D)
+
+		msg += struct.pack("d",configuration.pitch_P)
+		msg += struct.pack("d",configuration.pitch_I)
+		msg += struct.pack("d",configuration.pitch_D)
+
+		self.send_msg(msg,self.MSG_TYPE_STARTUP)
+
+	def send_shutdown_msg(self):
+		self.send_msg(b"",self.MSG_TYPE_SHUTDOWN)
+
 	def send_motor_msg(self,m1,m2,m3,m4):
 		if(m1 >= 1 << 16 or m2 >= 1 << 16 or m3 >= 1 << 16 or m4 >= 1 << 16):
 			print("Error: one of the motor values is too large!")
@@ -54,6 +106,9 @@ class drone_comm:
 		m4 = int.to_bytes(m4,length=2,byteorder='little')
 
 		self.send_msg(m1+m2+m3+m4,self.MSG_TYPE_MOTORS)
+
+	def send_height_msg(self,target_height):
+		self.send_msg(struct.pack("d",target_height),self.MSG_TYPE_HEIGHT)
 
 	def recv_status(self,ds):
 		try:

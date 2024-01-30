@@ -6,7 +6,12 @@
 #define MSG_TYPE_DEBUG 2
 #define MSG_TYPE_CALIBRATE 4
 #define MSG_TYPE_STATUS 10
+#define MSG_TYPE_ARM 11
+#define MSG_TYPE_STARTUP 12
+#define MSG_TYPE_SHUTDOWN 13
 #define MSG_TYPE_MOTORS 14
+#define MSG_TYPE_HEIGHT 16
+
 #define MSG_METADATA_SIZE sizeof(char) + sizeof(uint8_t)
 #define MAX_MSG_LEN BUFFER_SIZE - MSG_METADATA_SIZE
 

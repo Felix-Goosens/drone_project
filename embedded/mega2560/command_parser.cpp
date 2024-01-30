@@ -63,6 +63,85 @@ int command_parser::execute_command(struct msg_struct* command){
 			ESP_COMM.send_msg.type = MSG_TYPE_CALIBRATE;
 			ESP_COMM.send();
 			break;
+		case(CMD_TYPE_ARM):
+#ifdef DEBUG
+			Serial.println("CMD_TYPE_ARM");
+#endif
+			M1.arm();
+			M2.arm();
+			M3.arm();
+			M4.arm();
+
+			ESP_COMM.send_msg.type = MSG_TYPE_ARM;
+			ESP_COMM.send();
+			break;
+		case(CMD_TYPE_STARTUP):
+#ifdef DEBUG
+			Serial.println("CMD_TYPE_STARTUP");
+#endif
+			if(command->len != sizeof(int)*2 + sizeof(struct pid_factors_struct)*4){
+				break;
+			}
+			int *value_range = (int*)command->msg;
+			struct pid_factors_struct *PID_factors = (struct pid_factors_struct *)((int*)command->msg+2);
+
+			FC.init(PID_factors[0],PID_factors[1],PID_factors[2],PID_factors[3],value_range[0],value_range[1]);
+#ifdef DEBUG
+			Serial.println("Starting up FC:");
+			Serial.print("Min val: ");
+			Serial.println(FC->min_motor_val,DEC);
+			Serial.print("Max val: ");
+			Serial.println(FC->max_motor_val,DEC);
+
+			Serial.print("Height PID 1: P=");
+			Serial.print(FC->height_pid.P_factor,DEC);
+			Serial.print(",I=");
+			Serial.print(FC->height_pid.I_factor,DEC);
+			Serial.print(",D=");
+			Serial.println(FC->height_pid.D_factor,DEC);
+
+			Serial.print("Yaw PID 1: P=");
+			Serial.print(FC->yaw_pid.P_factor,DEC);
+			Serial.print(",I=");
+			Serial.print(FC->yaw_pid.I_factor,DEC);
+			Serial.print(",D=");
+			Serial.println(FC->yaw_pid.D_factor,DEC);
+
+			Serial.print("Roll PID 1: P=");
+			Serial.print(FC->roll_pid.P_factor,DEC);
+			Serial.print(",I=");
+			Serial.print(FC->roll_pid.I_factor,DEC);
+			Serial.print(",D=");
+			Serial.println(FC->roll_pid.D_factor,DEC);
+
+			Serial.print("Pitch PID 1: P=");
+			Serial.print(FC->pitch_pid.P_factor,DEC);
+			Serial.print(",I=");
+			Serial.print(FC->pitch_pid.I_factor,DEC);
+			Serial.print(",D=");
+			Serial.println(FC->pitch_pid.D_factor,DEC);
+#endif
+			ESP_COMM.send_msg.type = MSG_TYPE_STARTUP;
+			ESP_COMM.send();
+			STARTUP = true;
+			break;
+		case(CMD_TYPE_SHUTDOWN):
+			STARTUP = false;
+			ESP_COMM.send_msg.type = MSG_TYPE_SHUTDOWN;
+			ESP_COMM.send();
+			break;
+		case(CMD_TYPE_HEIGHT):
+#ifdef DEBUG
+			Serial.println("CMD_TYPE_HEIGHT");
+#endif
+			if(command->len != sizeof(double)){
+				break;
+			}
+
+			FC.target_height = *(double*)(command->msg);
+			ESP_COMM.send_msg.type = MSG_TYPE_HEIGHT;
+			ESP_COMM.send();
+			break;
 		default:
 #ifdef DEBUG
 			Serial.print("Unknown message type: ");
