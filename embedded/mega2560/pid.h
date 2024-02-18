@@ -1,24 +1,24 @@
 #include "math.h"
 
 struct pid_factors_struct{
-    double P_factor = 0;
-    double I_factor = 0;
-    double D_factor = 0;
+    float P_factor = 0;
+    float I_factor = 0;
+    float D_factor = 0;
 };
 
 class pid_class{
-    double proportional(double correction);
-    double integral(double correction);
-    double derivitive(double correction);
-    double clamper(double correction, double error);
+    float proportional(float correction);
+    float integral(float error, float dtime);
+    float derivative(float error, float dtime);
+    float clamper(float correction, float error);
     bool clamped = false;
     bool not_clamped = true;
-    double measurements[3];
-    int measurements_index = 0;
+    float prev_integral_correction = 0;
+    float prev_error = 0;
 public:
-    double update(double error, double feedback, double dtime);
+    float update(float target, float feedback, float dtime);
     struct pid_factors_struct factors;
     bool use_clamper = false;
-    double max_val, min_val;
+    float max_val, min_val;
     int get_output();
 };

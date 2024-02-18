@@ -1,24 +1,27 @@
 #include "pid.h"
+#include <Arduino.h>
 
-double pid_class::proportional(double correction){
-    // Not used
-    return this->factors.P_factor * correction;
+float pid_class::proportional(float error){
+    return this->factors.P_factor * error;
 }
 
-double pid_class::integral(double correction){
-    // Not used
-    if (this->clamped){
-        return 0;
+float pid_class::integral(float error, float dtime){
+    float correction = this->prev_integral_correction + this->factors.I_factor * dtime * (error + this->prev_error) / 2;
+    if (correction > 200){
+        return this->prev_integral_correction;
     }
-    return 0;
+    else if(correction < -200){
+        return this->prev_integral_correction;
+    }
+    this->prev_integral_correction = correction;
+    return correction;
 }
 
-double pid_class::derivitive(double correction){
-    // Not used
-    return 0;
+float pid_class::derivative(float error, float dtime){
+    return this->factors.D_factor * (error - this->prev_error) / dtime;
 }
 
-double pid_class::clamper(double correction, double error){
+float pid_class::clamper(float correction, float error){
     if (correction > this->max_val){
         if(correction > 0 && error > 0){
             this->clamped = true;
@@ -37,24 +40,9 @@ double pid_class::clamper(double correction, double error){
     }
 }
 
-double pid_class::update(double error, double feedback, double dtime){
-    double correction;
-    error = error - feedback;
-    this->measurements_index++;
-    this->measurements[this->measurements_index] = error;
-    correction = 
-        this->measurements[(this->measurements_index-1)%3] + 
-            (this->factors.P_factor + 
-            this->not_clamped * this->factors.I_factor * dtime + 
-            this->factors.D_factor / dtime) * 
-        this->measurements[this->measurements_index] +
-            (-this->factors.P_factor - 
-            2 * this->factors.D_factor / dtime) * 
-        this->measurements[(this->measurements_index-1)%3] +
-        this->factors.D_factor / dtime * this->measurements[(this->measurements_index-2)%3];
-        
-    if (this->use_clamper){
-        correction = clamper(correction, error);
-    }
+float pid_class::update(float target, float feedback, float dtime){
+    float error = target - feedback;
+    float correction = this->proportional(error) + this->integral(error,dtime) + this->derivative(error,dtime);
+    this->prev_error = error;
     return correction;
 }

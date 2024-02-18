@@ -28,23 +28,33 @@ void flight_controller_class::init(
     this->pitch_pid.max_val = max_motor_val;
 
     this->target_height = (MPU_DEV.pressure-101325)/12.013;
-    this->last_update_time = millis()/1000;
+    this->last_update_time = millis();
+}
+
+float flight_controller_class::correction_transformation(float correction){
+    correction += 1000;
+    if(correction < 1000){
+        correction = 1000;
+    }
+    else if(correction > 2000){
+        correction = 2000;
+    }
+    return correction;
 }
 
 void flight_controller_class::update(){
-    double dtime = millis()/1000 - this->last_update_time;
-    double height = (MPU_DEV.pressure-101325)/12.013;
+    float dtime = millis() - this->last_update_time;
+    this->height = (MPU_DEV.pressure-101325)/12.013;
 
-    double height_correction = this->height_pid.update(this->target_height, height, dtime);
-    double yaw_correction = this->yaw_pid.update(MPU_DEV.yaw, MPU_DEV.yaw, dtime);
-    double roll_correction = this->roll_pid.update(0, MPU_DEV.roll, dtime);
-    double pitch_correction = this->pitch_pid.update(0, MPU_DEV.pitch, dtime);
+    this->height_correction = this->height_pid.update(this->target_height, this->height, dtime);
+    this->yaw_correction = this->yaw_pid.update(MPU_DEV.yaw, MPU_DEV.yaw, dtime);
+    this->roll_correction = this->roll_pid.update(0, MPU_DEV.roll, dtime);
+    this->pitch_correction = this->pitch_pid.update(0, MPU_DEV.pitch, dtime);
 
-    // TODO: Check motor configuration
-    M1.speed(height_correction + yaw_correction + roll_correction + pitch_correction);
-    M2.speed(height_correction + yaw_correction + roll_correction + pitch_correction);
-    M3.speed(height_correction + yaw_correction + roll_correction + pitch_correction);
-    M4.speed(height_correction + yaw_correction + roll_correction + pitch_correction);
+    M1.speed(this->correction_transformation(this->height_correction - this->yaw_correction + this->roll_correction - this->pitch_correction));
+    M2.speed(this->correction_transformation(this->height_correction + this->yaw_correction - this->roll_correction - this->pitch_correction));
+    M3.speed(this->correction_transformation(this->height_correction - this->yaw_correction - this->roll_correction + this->pitch_correction));
+    M4.speed(this->correction_transformation(this->height_correction + this->yaw_correction + this->roll_correction + this->pitch_correction));
 
-    this->last_update_time = millis()/1000;
+    this->last_update_time = millis();
 }

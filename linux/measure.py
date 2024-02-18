@@ -1,4 +1,5 @@
 from drone_comm import *
+import log_measurement
 import argparse
 import curses
 import time
@@ -9,8 +10,8 @@ error_log = ""
 parser = argparse.ArgumentParser(prog='measure', description='Measure the sensor values of the drone')
 parser.add_argument("-c","--calibrate",action="store_true",help="Calibrate the MPU before measurement")
 parser.add_argument("-m","--motors",action="store_true",help="Turn on the motors during measurment")
-parser.add_argument("-a","--analyze",action="store",help="Analyze an output file instead of making new measurements")
-parser.add_argument("-o","--output",action="store",help="Place the output in a file")
+parser.add_argument("-a","--analyze",action="store_true",help="Only analyze the file, do not gather new measurements")
+parser.add_argument("-f","--measurements_file",action="store",help="Use this file to store and read the measurements",required=True)
 parser.add_argument("-t","--time",action="store",default=10,help="Time in seconds to measure")
 parser.add_argument("-n","--names",action="append",help="Names of the units to analyze")
 args = parser.parse_args()
@@ -21,6 +22,9 @@ def main(stdscr):
 
     dc = drone_comm()
     ds = drone_status()
+
+    lm = log_measurement.log_measurement(args.measurements_file)
+
     start_time = time.time()
     count = 0
     measurements = ""
@@ -36,10 +40,9 @@ def main(stdscr):
         dc.send_motor_msg(1100,1100,1100,1100)
 
     while(True):
-        while(True):
-            dc.send_status_msg()
-            if(dc.recv_status(ds) == 0):
-                break
+        while(dc.send_status_msg(ds) != 0):
+            pass
+
         if(ds.len > 0):
             count += 1
             measurements_per_second = count / (time.time() - start_time)
@@ -50,28 +53,16 @@ def main(stdscr):
             stdscr.addstr(4,0,f"roll: {str(ds.roll)}")
             stdscr.addstr(5,0,f"pitch: {str(ds.pitch)}")
             stdscr.addstr(6,0,f"yaw: {str(ds.yaw)}")
-            stdscr.addstr(7,0,f"Pressure: {str(ds.pres)}")
-            stdscr.addstr(8,0,f"Temp: {str(ds.temp)}")
 
             stdscr.refresh()
+            lm.log(ds)
 
-            measurements += f"#########################\n"
-            measurements += f"Time: {str(time.time()-start_time)}\n"
-            measurements += f"roll: {str(ds.roll)}\n"
-            measurements += f"pitch: {str(ds.pitch)}\n"
-            measurements += f"yaw: {str(ds.yaw)}\n"
-            measurements += f"Pressure: {str(ds.pres)}\n"
-            measurements += f"Temperature: {str(ds.temp)}\n"
-
-        if time.time() - start_time > args.time:
+        if time.time() - start_time > int(args.time):
             break
-
-    if args.output != None:
-        with open(args.output,"w") as f:
-            f.write(measurements)
     
     if args.motors:
         dc.send_motor_msg(0,0,0,0)
+    lm.close()
     return measurements
 
 def analyze_data(measurements,names):
@@ -96,12 +87,11 @@ def analyze_data(measurements,names):
 
     plt.show()
 
+if not args.analyze:
+    curses.wrapper(main).split("\n")
 
-if args.analyze != None:
-    with open(args.analyze,"r") as f:
-        measurements = f.readlines()
-else:
-    measurements = curses.wrapper(main).split("\n")
+with open(args.measurements_file,"r") as f:
+    measurements = f.readlines()
 
 print(error_log,end="")
 if error_log != "":

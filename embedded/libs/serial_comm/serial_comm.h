@@ -11,8 +11,10 @@
 #define MSG_TYPE_SHUTDOWN 13
 #define MSG_TYPE_MOTORS 14
 #define MSG_TYPE_HEIGHT 16
+#define MSG_TYPE_PID 18
+#define MSG_TYPE_ERROR 0xff
 
-#define MSG_METADATA_SIZE sizeof(char) + sizeof(uint8_t)
+#define MSG_METADATA_SIZE sizeof(uint8_t) + sizeof(uint8_t)
 #define MAX_MSG_LEN BUFFER_SIZE - MSG_METADATA_SIZE
 
 struct msg_struct{
