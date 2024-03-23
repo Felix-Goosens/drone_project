@@ -22,6 +22,9 @@ def main(stdscr):
 
     dc = drone_comm()
     ds = drone_status()
+    
+    drone_conf = drone_configuration()
+    dc.send_startup_msg(drone_conf)
 
     lm = log_measurement.log_measurement(args.measurements_file)
 
@@ -40,22 +43,20 @@ def main(stdscr):
         dc.send_motor_msg(1100,1100,1100,1100)
 
     while(True):
-        while(dc.send_status_msg(ds) != 0):
-            pass
+        dc.send_status_msg(ds)
 
-        if(ds.len > 0):
-            count += 1
-            measurements_per_second = count / (time.time() - start_time)
-            stdscr.clear()
-            stdscr.addstr(0,0,"#########################")
-            stdscr.addstr(1,0,f"Time: {str(time.time()-start_time)}")
-            stdscr.addstr(2,0,f"Measurements / second: {str(measurements_per_second)}")
-            stdscr.addstr(4,0,f"roll: {str(ds.roll)}")
-            stdscr.addstr(5,0,f"pitch: {str(ds.pitch)}")
-            stdscr.addstr(6,0,f"yaw: {str(ds.yaw)}")
+        count += 1
+        measurements_per_second = count / (time.time() - start_time)
+        stdscr.clear()
+        stdscr.addstr(0,0,"#########################")
+        stdscr.addstr(1,0,f"Time: {str(time.time()-start_time)}")
+        stdscr.addstr(2,0,f"Measurements / second: {str(measurements_per_second)}")
+        stdscr.addstr(4,0,f"roll: {str(ds.roll)}")
+        stdscr.addstr(5,0,f"pitch: {str(ds.pitch)}")
+        stdscr.addstr(6,0,f"yaw: {str(ds.yaw)}")
 
-            stdscr.refresh()
-            lm.log(ds)
+        stdscr.refresh()
+        lm.log(ds)
 
         if time.time() - start_time > int(args.time):
             break

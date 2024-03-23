@@ -13,7 +13,7 @@ public:
 
     float height_correction, yaw_correction, roll_correction, pitch_correction;
 
-    float target_height, height;
+    float target_height, height, height_offset;
     
     void init(
         struct pid_factors_struct height_factors,

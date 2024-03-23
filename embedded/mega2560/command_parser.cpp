@@ -109,7 +109,7 @@ int command_parser::execute_command(struct msg_struct* command){
 			FC.init(PID_factors[0],PID_factors[1],PID_factors[2],PID_factors[3],value_range[0],value_range[1]);
 #ifdef DEBUG
 			Serial.println("Starting up FC:");
-			Serial.print("Min val: ");
+/*			Serial.print("Min val: ");
 			Serial.println(FC.min_motor_val,DEC);
 			Serial.print("Max val: ");
 			Serial.println(FC.max_motor_val,DEC);
@@ -140,7 +140,7 @@ int command_parser::execute_command(struct msg_struct* command){
 			Serial.print(",I=");
 			Serial.print(FC.pitch_pid.I_factor,DEC);
 			Serial.print(",D=");
-			Serial.println(FC.pitch_pid.D_factor,DEC);
+			Serial.println(FC.pitch_pid.D_factor,DEC);*/
 #endif
 			STARTUP = true;
 
