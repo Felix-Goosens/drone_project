@@ -3,35 +3,48 @@
 void udp_comm::init(){
 	WiFi.softAP("TP-www", "thereisnospoon");
 	this->udp.begin(1123);
-	this->empty_recv();
 }
 
-void udp_comm::empty_recv(){
-	while(this->udp.parsePacket() > 0){}
-}
-
-int udp_comm::send(){
+bool udp_comm::send(){
 	this->udp.beginPacket("192.168.4.2", 1123);
-	this->udp.write((const uint8_t*)&this->send_msg, MSG_METADATA_SIZE + this->send_msg.len);
+	this->udp.write(((const uint8_t*)&this->send_msg) + 2, this->send_msg.len + UDP_MSG_METADATA_SIZE);
 	this->udp.endPacket();
-	this->zero_send();
-	return 1;
+
+	return true;
 }
 
-int udp_comm::recv(){
-	int size = this->udp.parsePacket();
-	if(size > 0){
-		this->zero_recv();
-		if(size > sizeof(struct msg_struct) || size < MSG_METADATA_SIZE){
-			return 0;
-		}
-		this->udp.read((char*)&this->recv_msg, size);
-		if(!this->recv_msg.len > MAX_MSG_LEN){
-			this->empty_recv();
-			this->zero_recv();
-			return 0;
-		}
+int udp_comm::read_header(){
+	if(this->udp.available() >= UDP_MSG_METADATA_SIZE){
+		this->udp.read(((char*)&this->recv_msg) + 2, UDP_MSG_METADATA_SIZE);
 		return 1;
 	}
 	return 0;
+}
+
+int udp_comm::read_msg(){
+	if(this->udp.available() >= this->recv_msg.len){
+		this->udp.read((char*)&this->recv_msg.msg, this->recv_msg.len);
+		return 2;
+	}
+	return 1;
+}
+
+bool udp_comm::recv(){
+	static int state = 0;
+
+	this->udp.parsePacket();
+
+	switch(state){
+		case(0):
+			state = this->read_header();
+			break;
+		case(1):
+			state = this->read_msg();
+			break;
+		case(2):
+			state = 0;
+			return true;
+	}
+
+	return false;
 }

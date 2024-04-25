@@ -26,12 +26,18 @@ void loop(){
 	if(timing.is_time(heartbeat_t)){
 		dev_status.heartbeat();
 	}
-	if(mega2560_comm.recv() == 0){
+	if(mega2560_comm.recv()){
 		memcpy(&udp.send_msg, &mega2560_comm.recv_msg, MSG_METADATA_SIZE + mega2560_comm.recv_msg.len);
 		udp.send();
 	}
 	if(udp.recv()){
-		memcpy(&mega2560_comm.send_msg, &udp.recv_msg, MSG_METADATA_SIZE + udp.recv_msg.len);
-		mega2560_comm.send();
+		// Send an ack to indicate that the message was received
+		udp.send_msg.type = udp.recv_msg.type;
+		udp.send_msg.len = 0;
+		udp.send();
+
+		memcpy(&mega2560_comm.send_msg.msg, &udp.recv_msg.msg, udp.recv_msg.len);
+		mega2560_comm.send_msg.len = udp.recv_msg.len;
+		while(!mega2560_comm.send(udp.recv_msg.type)){}
 	}
 }
