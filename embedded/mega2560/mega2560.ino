@@ -31,7 +31,7 @@ void setup() {
 	Serial.begin(9600);
 	Serial1.begin(9600);
 	ESP_COMM.init(&Serial1);
-	if(!MPU_DEV.init()){
+	if(MPU_DEV.init() != 0){
 		DEV_STATUS.error('I');
 	}
 }
@@ -55,13 +55,5 @@ void loop() {
 	if(TIMING.is_time(fc_update_t) && STARTUP){
 		FC.update();
 	}
-	if(ESP_COMM.recv() == 0){
-#ifdef DEBUG
-		Serial.println("Received message");
-#endif
-		if(cmd_parser.execute_command(&ESP_COMM.recv_msg) != 0){
-			// Invalid command
-			DEV_STATUS.error('M');
-		}
-	}
+	cmd_parser.execute_command(&ESP_COMM.recv_msg);
 }
