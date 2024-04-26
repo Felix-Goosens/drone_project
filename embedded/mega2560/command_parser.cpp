@@ -1,9 +1,8 @@
 #include "command_parser.h"
 
 #define SEND_DEBUG(var) \
-	ESP_COMM.append_msg(#var ":", strlen(#var ":")); \
-	ESP_COMM.append_msg((char*)&var,4); \
-	ESP_COMM.append_msg(",",1);
+	ESP_COMM.append_msg(#var "\x00", strlen(#var)+1); \
+	ESP_COMM.append_msg((char*)&var,4);
 
 #define SEND_VAR(var) \
 	ESP_COMM.append_msg((char*)&var,sizeof(var)); \
@@ -31,13 +30,7 @@ int command_parser::execute_command(struct msg_struct* command){
 	switch(command->type){
 		case(CMD_TYPE_DEBUG):
 			// Used for debugging purposes
-			SEND_DEBUG(MPU_DEV.radps.x);
-			SEND_DEBUG(MPU_DEV.radps.y);
-			SEND_DEBUG(MPU_DEV.radps.z);
-
-			SEND_DEBUG(MPU_DEV.mps2.x);
-			SEND_DEBUG(MPU_DEV.mps2.y);
-			SEND_DEBUG(MPU_DEV.mps2.z);
+			//SEND_DEBUG(MPU_DEV.radps.x);
 
 			msg_type = MSG_TYPE_DEBUG;
 			break;
