@@ -7,19 +7,19 @@ class drone_configuration:
 		self.max_motor_val = 1800
 		self.min_motor_val = 1100
 
-		self.height_P = 5
+		self.height_P = 1
 		self.height_I = 0.2
 		self.height_D = 0
 
-		self.yaw_P = 2
+		self.yaw_P = 1
 		self.yaw_I = 0
 		self.yaw_D = 0
 
-		self.roll_P = 0.6
+		self.roll_P = 1
 		self.roll_I = 0
 		self.roll_D = 0
 
-		self.pitch_P = 0.6
+		self.pitch_P = 1
 		self.pitch_I = 0
 		self.pitch_D = 0
 
@@ -32,6 +32,14 @@ class drone_status:
 
 		self.target_height = 0
 		self.height = 0
+
+### Layout of Message ###
+#
+#	struct msg_struct{
+#		uint8_t type;
+#		uint8_t len;
+#		char msg[255];
+#	};
 
 class drone_comm:
 	def __init__(self):
@@ -52,27 +60,35 @@ class drone_comm:
 		self.MSG_TYPE_MOTORS = 14
 		self.MSG_TYPE_HEIGHT = 16
 
-		if self.send_arm_msg() < 0:
-			print("Error Arming Drone")
-			exit()
-
 	def recv_msg(self, timeout=1):
-		try:
-			read_sockets, write_sockets, error_sockets = select.select([self.sock] , [], [], timeout)
-		except Exception:
+		read_sockets, write_sockets, error_sockets = select.select([self.sock] , [], [], timeout)
+		if read_sockets == []:
 			return -1,b""
 		return 0,read_sockets[0].recv(4096)
 
-	def send_msg(self,msg,msg_type):
-		if(len(msg) > 61):
-			print("Error: message is too long!")
-			return
-		self.sock.sendto(bytes([msg_type]) + bytes([len(msg)]) + msg,(self.drone_ip,self.drone_port))
+	def send_msg(self, msg_contents, msg_type):
+		msg = bytes([msg_type]) + bytes([len(msg_contents)]) + msg_contents
 
-		if msg_type == self.MSG_TYPE_CALIBRATE:
-			s,ack = self.recv_msg(60)
-		else:
+		for i in range(3):
+
+			self.sock.sendto(msg,(self.drone_ip,self.drone_port))
+
+			# Ack message from ESP
 			s,ack = self.recv_msg()
+			if s == 0:
+				break
+		else:
+			raise Exception
+
+		for i in range(3):
+			if msg_type == self.MSG_TYPE_CALIBRATE:
+				s,ack = self.recv_msg(120)
+			else:
+				s,ack = self.recv_msg()
+			if s == 0:
+				break
+		else:
+			raise Exception
 
 		if s == -1:
 			print("Error: MSG Timeout")
@@ -85,9 +101,18 @@ class drone_comm:
 		s,ack = self.send_msg(b"",self.MSG_TYPE_ARM)
 		return s
 
-	def send_debug_msg(self,msg):
-		s,ack = self.send_msg(msg,self.MSG_TYPE_DEBUG)
-		return s
+	def send_debug_msg(self):
+		s,data = self.send_msg(b"",self.MSG_TYPE_DEBUG)
+		data = data[2:]
+
+		parsed_data = {}
+		while(len(data) != 0):
+			var_name = data.split(b"\x00")[0].decode()
+			var_val = struct.unpack("f",data[len(var_name)+1:len(var_name)+1+4])[0]
+			parsed_data[var_name] = var_val
+			data = data[len(var_name)+1+4:]
+
+		return parsed_data
 
 	def send_calibrate_msg(self,magnetic_declination):
 		s,ack = self.send_msg(struct.pack("f",magnetic_declination),self.MSG_TYPE_CALIBRATE)
@@ -123,11 +148,7 @@ class drone_comm:
 		msg += struct.pack("f",configuration.yaw_I)
 		msg += struct.pack("f",configuration.yaw_D)
 
-		s,ack = self.send_msg(msg,self.MSG_TYPE_STARTUP)
-		if s != 0:
-			return s
-
-		msg = struct.pack("f",configuration.roll_P)
+		msg += struct.pack("f",configuration.roll_P)
 		msg += struct.pack("f",configuration.roll_I)
 		msg += struct.pack("f",configuration.roll_D)
 
@@ -176,3 +197,8 @@ if __name__ == "__main__":
 		print(vars(ds))
 	elif args.command == "CALIBRATE":
 		dc.send_calibrate_msg(float(args.contents))
+	elif args.command == "DEBUG":
+		print(dc.send_debug_msg())
+	elif args.command == "STARTUP":
+		conf = drone_configuration()
+		dc.send_startup_msg(conf)
