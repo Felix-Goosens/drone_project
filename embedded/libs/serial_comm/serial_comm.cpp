@@ -6,10 +6,8 @@ void serial_comm::init(HardwareSerial *port){
 
 int serial_comm::append_msg(char* buff, uint32_t len){
 	if(this->send_msg.len + len > MAX_MSG_LEN){
-		Serial.println("Append failed");
 		return -1;
 	}
-	Serial.println("Appending");
 	memcpy(&this->send_msg.msg[this->send_msg.len], buff, len);
 	this->send_msg.len += len;
 	return 0;
