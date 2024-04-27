@@ -75,10 +75,10 @@ int command_parser::execute_command(struct msg_struct* command){
 			break;
 		case(CMD_TYPE_STARTUP):
 			value_range = (int*)command->msg;
-			PID_factors[0] = ((struct pid_factors_struct *)((int*)command->msg+2))[0];
-			PID_factors[1] = ((struct pid_factors_struct *)((int*)command->msg+2))[1];
-			PID_factors[2] = ((struct pid_factors_struct *)command->msg)[2];
-			PID_factors[3] = ((struct pid_factors_struct *)command->msg)[3];
+			PID_factors[0] = ((struct pid_factors_struct *)&command->msg[4])[0];
+			PID_factors[1] = ((struct pid_factors_struct *)&command->msg[4])[1];
+			PID_factors[2] = ((struct pid_factors_struct *)&command->msg[4])[2];
+			PID_factors[3] = ((struct pid_factors_struct *)&command->msg[4])[3];
 
 			FC.init(PID_factors[0],PID_factors[1],PID_factors[2],PID_factors[3],value_range[0],value_range[1]);
 			STARTUP = true;
