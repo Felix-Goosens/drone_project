@@ -1,61 +1,5 @@
 #include "flight_controller.h"
-#include <BasicLinearAlgebra.h>
-using namespace BLA;
-
-BLA::Matrix<2,2> F;
-BLA::Matrix<2,1> G;
-BLA::Matrix<2,2> P;
-BLA::Matrix<2,2> Q;
-BLA::Matrix<2,1> S;
-BLA::Matrix<1,2> H;
-BLA::Matrix<2,2> I;
-BLA::Matrix<1,1> R;
-
-float kalman(float AnglePitch, float AngleRoll, float AccX, float AccY, float AccZ, float height){
-	BLA::Matrix<1,1> Acc;
-	BLA::Matrix<2,1> K;
-	BLA::Matrix<1,1> L;
-	BLA::Matrix<1,1> M;
-
-	float AccZInertial = -sin(AnglePitch*(3.142/180.0)) *
-		AccX + cos(AnglePitch*(3.142/180.0)) *
-		sin(AngleRoll*(3.142/180.0)) *
-		AccY + cos(AnglePitch*(3.142/180.0)) *
-		cos(AngleRoll*(3.142/180.0))*AccZ;
-
-	AccZInertial = -(AccZInertial-1)*9.81;
-
-#ifdef DEBUG
-    Serial.print("AccZInertial: ");
-    Serial.println(AccZInertial);
-#endif
-
-	Acc = {AccZInertial};
-	S = F*S + G*Acc;
-
-#ifdef DEBUG
-    Serial.print("S_2: ");
-    Serial.println(S(0,0));
-#endif
-
-	P = F*P*~F+Q;
-	L = H*P*~H+R;
-//	K = P*~H*Invert(L);
-    K = P*~H*((float)1.0 / L(0, 0));
-	M = {height};
-	S = S+K*(M-H*S);
-//	VelocityVerticalKalman = S(1, 0);
-	P = (I-K*H)*P;
-
-#ifdef DEBUG
-    Serial.print("K: ");
-    Serial.println(K(0,0),3);
-    Serial.println(K(1,0),3);
-    Serial.println(1/L(0,0),3);
-#endif
-
-	return S(0, 0);
-}
+#include <math.h>
 
 void flight_controller_class::init(
         struct pid_factors_struct height_factors,
@@ -87,18 +31,7 @@ void flight_controller_class::init(
     this->target_height = 0;
     this->height_offset = (MPU_DEV.pressure-101325)/12.013;
 
-//    float TS = 1/MPU_SAMPLING_RATE;
-    float TS = 0.250;
-    F = {(float)1.0, TS, (float)0.0, (float)1.0};
-    G = {(float)0.5 * TS*TS, TS};
-    P = {(float)0.0, (float)0.0, (float)0.0, (float)0.0};
-    Q = G * ~G*(float)10.0*(float)10.0;
-    S = {(float)0.0, (float)0.0};
-    H = {(float)1.0, (float)0.0};
-    I = {(float)1.0, (float)0.0, (float)0.0, (float)1.0};
-    R = {(float)30.0*(float)30.0};
-
-    this->last_update_time = millis();
+    this->last_update_time = millis() / 1000;
 }
 
 float flight_controller_class::correction_transformation(float correction){
@@ -113,55 +46,71 @@ float flight_controller_class::correction_transformation(float correction){
 }
 
 void flight_controller_class::update(){
-    float dtime = millis() - this->last_update_time;
+    static float uncertainty_pitch = 0.0f;
+    static float uncertainty_roll = 0.0f;
+    static float uncertainty_height = 0.0f;
 
-#ifdef DEBUG
-    Serial.println("kalman start");
+    static float int_pitch_std = 4.0f, acc_pitch_std = 3.0f;
+    static float int_roll_std = 4.0f, acc_roll_std = 3.0f;
 
-    Serial.print("Baro Height: ");
-    Serial.println((MPU_DEV.pressure-101325)/12.013 - this->height_offset,3);
+    float dtime = millis() / 1000.0f - this->last_update_time;
 
-    Serial.print("Pitch: ");
-    Serial.println(MPU_DEV.pitch,3);
-    Serial.print("roll: ");
-    Serial.println(MPU_DEV.roll,3);
+    // angle based on the radian per second
+    float int_pitch = this->pitch + MPU_DEV.radps.x * dtime * 360.0f / (2.0f * M_PI);
+    float int_roll = this->roll + MPU_DEV.radps.y * dtime * 360.0f / (2.0f * M_PI);
 
-    Serial.print("accX: ");
-    Serial.println(MPU_DEV.mpu.getAccX(),3);
-    Serial.print("accY: ");
-    Serial.println(MPU_DEV.mpu.getAccY(),3);
-    Serial.print("accZ: ");
-    Serial.println(MPU_DEV.mpu.getAccZ(),3);
+    // angle based on the acceleration
+    float acc_pitch = -atan(
+        MPU_DEV.mps2.x / sqrt(
+        MPU_DEV.mps2.y*MPU_DEV.mps2.y +
+        MPU_DEV.mps2.z*MPU_DEV.mps2.z))*
+        1.0f / (M_PI / 180.0f);
 
-    Serial.println("S: ");
-    Serial.println(S(0,0),3);
-    Serial.println(S(1,0),3);
+    float acc_roll = -atan(
+        MPU_DEV.mps2.y / sqrt(
+        MPU_DEV.mps2.x*MPU_DEV.mps2.x +
+        MPU_DEV.mps2.z*MPU_DEV.mps2.z))*
+        1.0f / (M_PI / 180.0f);
 
-    Serial.println("P: ");
+    // kalman filter for the angles
 
-    Serial.print(P(0,0),3);
-    Serial.print(", ");
-    Serial.println(P(0,1),3);
+    uncertainty_pitch = uncertainty_pitch + dtime * dtime * int_pitch_std * int_pitch_std;
+    float gain = uncertainty_pitch / (uncertainty_pitch + acc_pitch_std * acc_pitch_std);
+    this->pitch = int_pitch + gain * (acc_pitch - int_pitch);
 
-    Serial.print(P(1,0),3);
-    Serial.print(", ");
-    Serial.println(P(1,1),3);
-#endif
-    this->height = kalman(MPU_DEV.pitch, MPU_DEV.roll, MPU_DEV.mpu.getAccX(), MPU_DEV.mpu.getAccY(), MPU_DEV.mpu.getAccZ(), (MPU_DEV.pressure-101325.0)/12.013 - this->height_offset);
-#ifdef DEBUG
-    Serial.println("kalman end");
-    Serial.println(this->height,3);
-#endif
+    uncertainty_roll = uncertainty_roll + dtime * dtime * int_roll_std * int_roll_std;
+    gain = uncertainty_roll / (uncertainty_roll + acc_roll_std * acc_roll_std);
+    this->roll = int_roll + gain * (acc_roll - int_roll);
 
-    this->height_correction = this->height_pid.update(this->target_height, this->height, dtime);
-    this->yaw_correction = this->yaw_pid.update(MPU_DEV.yaw, MPU_DEV.yaw, dtime);
-    this->roll_correction = this->roll_pid.update(0, MPU_DEV.roll, dtime);
-    this->pitch_correction = this->pitch_pid.update(0, MPU_DEV.pitch, dtime);
+    this->yaw = 0.0f;
+
+//    float new_height_correction = this->height_pid.update(this->target_height, this->height, dtime);
+    float new_height_correction = 0;
+    float new_yaw_correction = this->yaw_pid.update(0, this->yaw, dtime);
+    float new_roll_correction = this->roll_pid.update(0, this->roll, dtime);
+    float new_pitch_correction = this->pitch_pid.update(0, this->pitch, dtime);
+
+    // To prevent accidents, the flight controller should be disabled if there is a correction of more than 200 units per second
+    if (fabs(new_height_correction - this->height_correction) / dtime > 200.0f ||
+        fabs(new_yaw_correction - this->yaw_correction) / dtime > 200.0f ||
+        fabs(new_roll_correction - this->roll_correction) / dtime > 200.0f ||
+        fabs(new_pitch_correction - this->pitch_correction) / dtime > 200.0f ){
+        STARTUP = false;
+        new_height_correction = 0;
+        new_yaw_correction = 0;
+        new_roll_correction = 0;
+        new_pitch_correction = 0;
+    }
+
+    this->height_correction = new_height_correction;
+    this->yaw_correction = new_yaw_correction;
+    this->roll_correction = new_roll_correction;
+    this->pitch_correction = new_pitch_correction;
 
     M1.speed(this->correction_transformation(this->height_correction - this->yaw_correction + this->roll_correction - this->pitch_correction));
     M2.speed(this->correction_transformation(this->height_correction + this->yaw_correction - this->roll_correction - this->pitch_correction));
     M3.speed(this->correction_transformation(this->height_correction - this->yaw_correction - this->roll_correction + this->pitch_correction));
     M4.speed(this->correction_transformation(this->height_correction + this->yaw_correction + this->roll_correction + this->pitch_correction));
 
-    this->last_update_time = millis();
+    this->last_update_time = millis() / 1000.0f;
 }

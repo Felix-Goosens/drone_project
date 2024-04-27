@@ -15,6 +15,10 @@ public:
 
     float target_height, height, height_offset;
     
+	float roll = 0;
+    float pitch = 0;
+    float yaw = 0;
+
     void init(
         struct pid_factors_struct height_factors,
         struct pid_factors_struct yaw_factors,
