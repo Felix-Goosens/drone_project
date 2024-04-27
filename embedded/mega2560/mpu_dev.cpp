@@ -46,7 +46,7 @@ void mpu_dev_class::calibrate(float magnetic_declination){
 	struct vec_struct mps2_avg;
 	int samples = 1000;
 	for(int i=0; i<samples; i++){
-		delay(10);
+		delay(5);
 		this->update();
 		radps_avg.x += this->radps.x;
 		radps_avg.y += this->radps.y;
@@ -62,7 +62,7 @@ void mpu_dev_class::calibrate(float magnetic_declination){
 
 	this->mps2_offsets.x = mps2_avg.x / samples;
 	this->mps2_offsets.y = mps2_avg.y / samples;
-	this->mps2_offsets.z = mps2_avg.z / samples;
+	this->mps2_offsets.z = mps2_avg.z / samples + 9.81;
 }
 
 void mpu_dev_class::update(){
