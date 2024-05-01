@@ -24,3 +24,8 @@ bool timing_class::is_time(uint32_t id){
 	}
 	return false;
 }
+
+void timing_class::reset(uint32_t id){
+	struct timing_struct* t = &this->times[id];
+	t->time = millis();
+}

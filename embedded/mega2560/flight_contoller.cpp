@@ -100,6 +100,9 @@ void flight_controller_class::update(){
         new_yaw_correction = 0;
         new_roll_correction = 0;
         new_pitch_correction = 0;
+
+        led_on(static_cast<int>(LED_PINS::emergency_halt));
+        led_off(static_cast<int>(LED_PINS::armed));
     }
 
     this->height_correction = new_height_correction;

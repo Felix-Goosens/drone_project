@@ -8,8 +8,6 @@ const int MOTOR_PIN1 = 48;
 const int MOTOR_PIN2 = 46;
 const int MOTOR_PIN3 = 44;
 const int MOTOR_PIN4 = 42;
-const int LED_VCC_PIN = 41;
-const int LED_GND_PIN = 39;
 
 class ESC M1(MOTOR_PIN1,1000,2000,700);
 class ESC M2(MOTOR_PIN2,1000,2000,700);
@@ -18,21 +16,30 @@ class ESC M4(MOTOR_PIN4,1000,2000,700);
 
 class serial_comm ESP_COMM;
 class mpu_dev_class MPU_DEV;
-class device_status_class DEV_STATUS(LED_VCC_PIN,-1,LED_VCC_PIN);
 
 class timing_class TIMING;
 
 class flight_controller_class FC;
 
 void setup() {
-	pinMode(LED_GND_PIN, OUTPUT);
-	digitalWrite(LED_GND_PIN, LOW);
+	led_init(static_cast<int>(LED_PINS::heartbeat));
+	led_init(static_cast<int>(LED_PINS::armed));
+
+	led_init(static_cast<int>(LED_PINS::message));
+	led_init(static_cast<int>(LED_PINS::reserved_blue));
+
+	led_init(static_cast<int>(LED_PINS::bad_message));
+	led_init(static_cast<int>(LED_PINS::reserved_yellow));
+
+	led_init(static_cast<int>(LED_PINS::emergency_halt));
+	led_init(static_cast<int>(LED_PINS::fault));
 
 	Serial.begin(9600);
 	Serial1.begin(9600);
 	ESP_COMM.init(&Serial1);
 	if(MPU_DEV.init() != 0){
-		DEV_STATUS.error('I');
+		led_on(static_cast<int>(LED_PINS::fault));
+		while(1){}
 	}
 }
 
@@ -41,13 +48,13 @@ void loop() {
 	static size_t heartbeat_t = TIMING.add_timing(1000);
 	static size_t mpu_collect_t = TIMING.add_timing(1000/MPU_SAMPLING_RATE);
 	static size_t fc_update_t = TIMING.add_timing(1000/FC_SAMPLING_RATE);
+	static size_t message_led_t = TIMING.add_timing(100);
+
 	static class command_parser cmd_parser;
 
 	if(TIMING.is_time(heartbeat_t)){
-#ifdef DEBUG
-		Serial.println("Heartbeat");
-#endif
-		DEV_STATUS.heartbeat();
+		DBGPRINT("heartbeat")
+		led_flip(static_cast<int>(LED_PINS::heartbeat));
 	}
 	if(TIMING.is_time(mpu_collect_t)){
 		MPU_DEV.update();
@@ -55,5 +62,12 @@ void loop() {
 	if(TIMING.is_time(fc_update_t) && STARTUP){
 		FC.update();
 	}
-	cmd_parser.execute_command(&ESP_COMM.recv_msg);
+	if(TIMING.is_time(message_led_t)){
+		led_off(static_cast<int>(LED_PINS::message));
+	}
+	if(cmd_parser.execute_command(&ESP_COMM.recv_msg) == 1){
+		DBGPRINT("Parsing command");
+		led_on(static_cast<int>(LED_PINS::message));
+		TIMING.reset(message_led_t);
+	}
 }

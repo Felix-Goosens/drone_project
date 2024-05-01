@@ -3,9 +3,34 @@
 #include <Adafruit_BMP280.h>
 #include <device_status.h>
 #include <timing.h>
+#include <led_utils.h>
 #include "mpu_dev.h"
 #include "ESC.h"
 #include "flight_controller.h"
+
+#ifdef DEBUG
+#define DBGPRINT(str) Serial.println(str);
+#else
+#define DBGPRINT(str)
+#endif
+
+enum class LED_PINS : uint32_t {
+    // Green leds
+    heartbeat = 52,
+    armed = 50,
+
+    // Blue leds
+    message = 48,
+    reserved_blue = 46,
+
+    // Yellow leds
+    bad_message = 44,
+    reserved_yellow = 42,
+
+    // Red leds
+    emergency_halt = 40,
+    fault = 38
+};
 
 extern bool STARTUP;
 
