@@ -44,6 +44,7 @@ void setup() {
 }
 
 void loop() {
+	// TODO: add warning when loop is too slow
 
 	static size_t heartbeat_t = TIMING.add_timing(1000);
 	static size_t mpu_collect_t = TIMING.add_timing(1000/MPU_SAMPLING_RATE);
