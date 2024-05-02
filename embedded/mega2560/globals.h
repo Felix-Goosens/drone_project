@@ -25,7 +25,7 @@ enum class LED_PINS : uint32_t {
 
     // Yellow leds
     bad_message = 44,
-    reserved_yellow = 42,
+    loop_freq = 42,
 
     // Red leds
     emergency_halt = 40,
