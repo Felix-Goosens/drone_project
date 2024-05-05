@@ -31,6 +31,10 @@ void flight_controller_class::init(
     this->target_height = 0;
     this->height_offset = (MPU_DEV.pressure-101325)/12.013;
 
+    this->kalman_roll.init(5, 5);
+    this->kalman_pitch.init(5, 5);
+    this->kalman_height.init(0.5, 0.5);
+
     this->last_update_time = millis() / 1000;
 }
 
@@ -46,16 +50,16 @@ float flight_controller_class::correction_transformation(float correction){
 }
 
 void flight_controller_class::update(){
-    static float uncertainty_pitch = 0.0f;
-    static float uncertainty_roll = 0.0f;
-    static float uncertainty_height = 0.0f;
+//    static float uncertainty_pitch = 0.0f;
+//    static float uncertainty_roll = 0.0f;
+//    static float uncertainty_height = 0.0f;
 
-    static float int_pitch_std = 4.0f, acc_pitch_std = 3.0f;
-    static float int_roll_std = 4.0f, acc_roll_std = 3.0f;
+//    static float int_pitch_std = 4.0f, acc_pitch_std = 3.0f;
+//    static float int_height_std = 4.0f, int_roll_std = 4.0f, acc_roll_std = 3.0f;
 
     float dtime = millis() / 1000.0f - this->last_update_time;
 
-    // angle based on the radian per second
+    // angle based on the integral of radians per second
     float int_pitch = this->pitch + MPU_DEV.radps.x * dtime * 360.0f / (2.0f * M_PI);
     float int_roll = this->roll + MPU_DEV.radps.y * dtime * 360.0f / (2.0f * M_PI);
 
@@ -72,19 +76,15 @@ void flight_controller_class::update(){
         MPU_DEV.mps2.z*MPU_DEV.mps2.z))*
         1.0f / (M_PI / 180.0f);
 
+    float bar_height = 44330.0f * ( 1.0f - pow(MPU_DEV.pressure / 101325.0f, 1.0f / 5.255f) ) + this->height_offset;
+
+    float acc_height = -MPU_DEV.mps2.x * sin(this->pitch) + MPU_DEV.mps2.y * sin(this->roll) * cos(this->pitch) + MPU_DEV.mps2.z * cos(this->roll)*cos(this->pitch) + 9.81;
+
     // kalman filter for the angles
-
-    uncertainty_pitch = uncertainty_pitch + dtime * dtime * int_pitch_std * int_pitch_std;
-    float gain = uncertainty_pitch / (uncertainty_pitch + acc_pitch_std * acc_pitch_std);
-    this->pitch = int_pitch + gain * (acc_pitch - int_pitch);
-
-    uncertainty_roll = uncertainty_roll + dtime * dtime * int_roll_std * int_roll_std;
-    gain = uncertainty_roll / (uncertainty_roll + acc_roll_std * acc_roll_std);
-    this->roll = int_roll + gain * (acc_roll - int_roll);
-
-    this->yaw = 0.0f;
-
-    this->height = 44330.0f * ( 1.0f - pow(MPU_DEV.pressure / 101325.0f, 1.0f / 5.255f) );
+    this->pitch = this->kalman_pitch.predict(int_pitch, acc_pitch, dtime);
+    this->roll = this->kalman_roll.predict(int_roll, acc_roll, dtime);
+    // TODO: Check unit of height
+    this->height = this->kalman_height.predict(bar_height, acc_height, dtime);
 
     float new_height_correction = this->height_pid.update(this->target_height, this->height, dtime);
     float new_yaw_correction = this->yaw_pid.update(0, this->yaw, dtime);

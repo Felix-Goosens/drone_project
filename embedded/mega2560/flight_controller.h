@@ -1,10 +1,12 @@
 #pragma once
 #include <Arduino.h>
+#include "kalman.h"
 #include "globals.h"
 #include "pid.h"
 
 class flight_controller_class{
     float last_update_time;
+    class kalman_class kalman_roll, kalman_pitch, kalman_height;
     float correction_transformation(float correction);
 public:
     int min_motor_val;
