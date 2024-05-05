@@ -84,8 +84,9 @@ void flight_controller_class::update(){
 
     this->yaw = 0.0f;
 
-//    float new_height_correction = this->height_pid.update(this->target_height, this->height, dtime);
-    float new_height_correction = 0;
+    this->height = 44330.0f * ( 1.0f - pow(MPU_DEV.pressure / 101325.0f, 1.0f / 5.255f) );
+
+    float new_height_correction = this->height_pid.update(this->target_height, this->height, dtime);
     float new_yaw_correction = this->yaw_pid.update(0, this->yaw, dtime);
     float new_roll_correction = this->roll_pid.update(0, this->roll, dtime);
     float new_pitch_correction = this->pitch_pid.update(0, this->pitch, dtime);
