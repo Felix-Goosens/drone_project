@@ -29,7 +29,7 @@ void flight_controller_class::init(
     this->pitch_pid.max_val = max_motor_val;
 
     this->target_height = 0;
-    this->height_offset = (MPU_DEV.pressure-101325)/12.013;
+    this->height_offset = 44330.0f * ( 1.0f - pow(MPU_DEV.pressure / 100.0f / 101325.0f, 1.0f / 5.255f) ) * 32.8040f;
 
     this->kalman_roll.init(5, 5);
     this->kalman_pitch.init(5, 5);
@@ -50,12 +50,6 @@ float flight_controller_class::correction_transformation(float correction){
 }
 
 void flight_controller_class::update(){
-//    static float uncertainty_pitch = 0.0f;
-//    static float uncertainty_roll = 0.0f;
-//    static float uncertainty_height = 0.0f;
-
-//    static float int_pitch_std = 4.0f, acc_pitch_std = 3.0f;
-//    static float int_height_std = 4.0f, int_roll_std = 4.0f, acc_roll_std = 3.0f;
 
     float dtime = millis() / 1000.0f - this->last_update_time;
 
@@ -76,14 +70,15 @@ void flight_controller_class::update(){
         MPU_DEV.mps2.z*MPU_DEV.mps2.z))*
         1.0f / (M_PI / 180.0f);
 
-    float bar_height = 44330.0f * ( 1.0f - pow(MPU_DEV.pressure / 101325.0f, 1.0f / 5.255f) ) + this->height_offset;
+    float bar_height = 44330.0f * ( 1.0f - pow(MPU_DEV.pressure / 100.0f / 101325.0f, 1.0f / 5.255f) ) * 32.8040f - this->height_offset;
 
     float acc_height = -MPU_DEV.mps2.x * sin(this->pitch) + MPU_DEV.mps2.y * sin(this->roll) * cos(this->pitch) + MPU_DEV.mps2.z * cos(this->roll)*cos(this->pitch) + 9.81;
 
     // kalman filter for the angles
     this->pitch = this->kalman_pitch.predict(int_pitch, acc_pitch, dtime);
     this->roll = this->kalman_roll.predict(int_roll, acc_roll, dtime);
-    // TODO: Check unit of height
+
+    // Height in cm
     this->height = this->kalman_height.predict(bar_height, acc_height, dtime);
 
     float new_height_correction = this->height_pid.update(this->target_height, this->height, dtime);
