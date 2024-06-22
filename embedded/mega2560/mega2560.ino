@@ -4,10 +4,15 @@ bool STARTUP = false;
 const int MPU_SAMPLING_RATE = 200;
 const int FC_SAMPLING_RATE = 4;
 
-const int MOTOR_PIN1 = 48;
-const int MOTOR_PIN2 = 46;
-const int MOTOR_PIN3 = 44;
-const int MOTOR_PIN4 = 42;
+//const int MOTOR_PIN1 = 48;
+//const int MOTOR_PIN2 = 46;
+//const int MOTOR_PIN3 = 44;
+//const int MOTOR_PIN4 = 42;
+
+const int MOTOR_PIN1 = 37;
+const int MOTOR_PIN2 = 35;
+const int MOTOR_PIN3 = 33;
+const int MOTOR_PIN4 = 31;
 
 class ESC M1(MOTOR_PIN1,1000,2000,700);
 class ESC M2(MOTOR_PIN2,1000,2000,700);

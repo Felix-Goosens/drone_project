@@ -188,7 +188,9 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 
 	dc = drone_comm()
-	if args.command == "MOTORS":
+	if args.command == "ARM":
+		dc.send_arm_msg()
+	elif args.command == "MOTORS":
 		speeds = args.contents.split(",")
 		dc.send_motor_msg(int(speeds[0]),int(speeds[1]),int(speeds[2]),int(speeds[3]))
 	elif args.command == "STATUS":
