@@ -204,3 +204,5 @@ if __name__ == "__main__":
 	elif args.command == "STARTUP":
 		conf = drone_configuration()
 		dc.send_startup_msg(conf)
+	elif args.command == "HEIGHT":
+		dc.send_height_msg(float(args.contents)):
