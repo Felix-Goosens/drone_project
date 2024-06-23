@@ -32,8 +32,12 @@ int command_parser::execute_command(struct msg_struct* command){
 	switch(command->type){
 		case(CMD_TYPE_DEBUG):
 			// Used for debugging purposes
-			//SEND_DEBUG(MPU_DEV.radps.x);
-
+			SEND_DEBUG(FC.yaw_correction);
+			SEND_DEBUG(FC.roll_correction);
+			SEND_DEBUG(FC.pitch_correction);
+//			SEND_DEBUG(FC.bar_height);
+//			SEND_DEBUG(FC.acc_height);
+//			SEND_DEBUG(MPU_DEV.pressure);
 			msg_type = MSG_TYPE_DEBUG;
 			break;
 		case(CMD_TYPE_MOTORS):

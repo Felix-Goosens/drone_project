@@ -107,9 +107,9 @@ void flight_controller_class::update(){
     this->pitch_correction = new_pitch_correction;
 
     M1.speed(this->correction_transformation(this->height_correction - this->yaw_correction + this->roll_correction - this->pitch_correction));
-    M2.speed(this->correction_transformation(this->height_correction + this->yaw_correction - this->roll_correction - this->pitch_correction));
-    M3.speed(this->correction_transformation(this->height_correction - this->yaw_correction - this->roll_correction + this->pitch_correction));
-    M4.speed(this->correction_transformation(this->height_correction + this->yaw_correction + this->roll_correction + this->pitch_correction));
+    M2.speed(this->correction_transformation(this->height_correction + this->yaw_correction + this->roll_correction + this->pitch_correction));
+    M3.speed(this->correction_transformation(this->height_correction - this->yaw_correction - this->roll_correction - this->pitch_correction));
+    M4.speed(this->correction_transformation(this->height_correction + this->yaw_correction - this->roll_correction + this->pitch_correction));
 
     this->last_update_time = millis() / 1000.0f;
 }
